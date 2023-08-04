@@ -1,0 +1,79 @@
+pipeline {
+    agent {
+        label "jenkinsRn02"
+    }
+	tools {
+        maven "maven-3.6.3"
+    }
+    environment {
+        NEXUS_VERSION = "nexus3"
+        NEXUS_PROTOCOL = "http"
+        NEXUS_URL = "nexus.wisefly.cn"
+        NEXUS_REPOSITORY = "jar-products"
+        NEXUS_CREDENTIAL_ID = "nexus-user-credentials"
+    }
+    stages {
+        stage("Clone code from VCS") {
+            steps {
+                script {
+                    checkout([$class: 'GitSCM', branches: [[name: '$gitlab_code_branch']],
+                    browser: [$class: 'GitLab', repoUrl: 'http://gitlab.wisefly.cn/RnDII/wisefly-workflow.git'],
+                    extensions: [],
+                    userRemoteConfigs: [[credentialsId: 'b200aed5-6942-4548-9654-3fc7df1ca857', url: 'http://gitlab.wisefly.cn/RnDII/wisefly-workflow.git']]])
+                }
+            }
+        }
+        stage("Maven Build") {
+            steps {
+                script {
+                    sh  '''source /etc/profile
+                        mvn clean package -DskipTests'''
+                }
+            }
+        }
+        stage("Copy files to the production environment") {
+            steps {
+                ansiblePlaybook (
+                    playbook: "${env.WORKSPACE}/push.yaml",
+
+                )
+            }
+        }
+        stage("Publish to Nexus Repository Manager") {
+            steps {
+                script {
+                    nexusArtifactUploader artifacts: [[artifactId: '$jenkins_project_name',
+                    classifier: '',
+                    file: 'wisefly-workflow-web/target/$jenkins_project_name-$create_jar_pakage_version.jar',
+                    type: 'jar']],
+                    credentialsId: 'b200aed5-6942-4548-9654-3fc7df1ca857',
+                    groupId: '$jenkins_env', nexusUrl: 'nexus.wisefly.cn',
+                    nexusVersion: 'nexus3',
+                    protocol: 'http', repository: 'jar-products',
+                    version: '$create_jar_pakage_version'
+                }
+            }
+        }
+        stage('SonarQube代码审查') {
+            steps{
+                script {
+                    scannerHome = tool 'sonar-scanner-4.4.0.2170'
+                }
+                withSonarQubeEnv('sonarqube_jenkins') {
+                    sh "${scannerHome}/bin/sonar-scanner"
+                }
+            }
+        }
+        stage('Bulid docker') {
+            steps{
+                script {
+                    sh  '''
+                        docker build -t $jenkins_project_name:$docker_images_version .
+                        docker tag $jenkins_project_name:$docker_images_version 10.0.1.28:5003/$jenkins_project_name:$docker_images_version
+                        docker push 10.0.1.28:5003/$jenkins_project_name:$docker_images_version
+                        '''
+                }
+            }
+        }
+    }
+}

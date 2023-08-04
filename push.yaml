@@ -1,0 +1,16 @@
+---
+
+- hosts: test70
+  remote_user: root
+  gather_facts: false
+
+  tasks:
+    - name: "复制slave主机上的文件到目标服务器上"
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: root
+        group: root
+        mode: 755
+      with_items:
+        - { src: "/opt/jenkins/workspace/$jenkins_env/$jenkins_project_name/wisefly-workflow-web/target/$jenkins_project_name-$create_jar_pakage_version.jar", dest: "/mnt/test/" }

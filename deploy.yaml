@@ -1,0 +1,13 @@
+---
+
+- hosts: dev02
+  remote_user: root
+  gather_facts: false
+
+  tasks:
+    - name: "运行docker镜像"
+      shell:
+        cmd: |
+          docker rm -f {{jenkins_project_name}}
+          docker rmi 10.0.1.28:5003/{{jenkins_project_name}}:{{docker_images_version}}
+          docker run --name {{jenkins_project_name}} --restart=always --net=host -p 22028:22028 -e "SPRING_PROFILES_ACTIVE=dev" -e TZ="Asia/Shanghai" -v /home/wisefly/logs/{{jenkins_project_name}}/logs -idt 10.0.1.28:5003/{{jenkins_project_name}}:{{docker_images_version}}
