@@ -4,4 +4,4 @@ spring:
   application:
     name: quick-start
   profiles:
-    active: dev
+    active: prod
