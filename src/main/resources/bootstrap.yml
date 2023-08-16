@@ -1,20 +1,7 @@
-
+server:
+  port: 8081
 spring:
   application:
     name: quick-start
   profiles:
     active: dev
-  cloud:
-    nacos:
-      discovery:
-        server-addr: 192.168.50.129:8848
-        username: nacos
-        password: nacos
-        enabled: true
-      config:
-        server-addr: 192.168.50.129:8848
-        file-extension: yaml
-        username: nacos
-        password: nacos
-server:
-  port: 8081
