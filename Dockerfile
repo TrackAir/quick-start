@@ -3,7 +3,7 @@ FROM openjdk:8
 MAINTAINER little "track"
 
 RUN mkdir -p /opt/server
-ADD quick-start-0.0.1-SNAPSHOT.jar /opt/server
+ADD /target/quick-start-0.0.1-SNAPSHOT.jar /opt/server
 
 WORKDIR /opt/server
 
